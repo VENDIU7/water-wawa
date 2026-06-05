@@ -1,38 +1,96 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
+
+// 使用 Web Audio API 实时生成海浪白噪音
+function createWaveSound(audioCtx: AudioContext) {
+  const masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.12;
+  masterGain.connect(audioCtx.destination);
+
+  // 创建多个噪声源模拟海浪层次
+  const layers = [
+    { freq: 200, gain: 0.4, rate: 0.08 },   // 低频深沉浪
+    { freq: 400, gain: 0.3, rate: 0.06 },   // 中频浪花
+    { freq: 800, gain: 0.15, rate: 0.1 },   // 高频泡沫
+  ];
+
+  const activeNodes: AudioNode[] = [];
+
+  layers.forEach(({ freq, gain: layerGain, rate }) => {
+    // 用振荡器 + 随机频率调制模拟噪声
+    const bufferSize = 2 * audioCtx.sampleRate;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * 0.2;
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
+
+    // 带通滤波器
+    const bandpass = audioCtx.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    bandpass.frequency.value = freq;
+    bandpass.Q.value = 0.5;
+
+    // LFO 调制频率，模拟潮汐起伏
+    const lfo = audioCtx.createOscillator();
+    lfo.frequency.value = rate;
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = freq * 0.5;
+    lfo.connect(lfoGain);
+    lfoGain.connect(bandpass.frequency);
+    lfo.start();
+
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = layerGain;
+
+    noise.connect(bandpass);
+    bandpass.connect(gainNode);
+    gainNode.connect(masterGain);
+    noise.start();
+
+    activeNodes.push(noise, bandpass, gainNode, lfo, lfoGain);
+  });
+
+  // 返回清理函数
+  return () => {
+    activeNodes.forEach(node => {
+      try { (node as any).stop?.(); } catch {}
+      try { node.disconnect(); } catch {}
+    });
+    masterGain.disconnect();
+  };
+}
 
 export default function SoundToggle() {
   const [enabled, setEnabled] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    // 尝试加载波浪音效
-    try {
-      const audio = new Audio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_c6d4c9e2c9.mp3?filename=ocean-waves-112906.mp3');
-      audio.loop = true;
-      audio.volume = 0.3;
-      audioRef.current = audio;
-    } catch {
-      // 音频加载失败则静默处理
-    }
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
-
-  const toggle = () => {
-    if (!audioRef.current) return;
+  const toggle = useCallback(() => {
     if (enabled) {
-      audioRef.current.pause();
+      // 停止音效
+      cleanupRef.current?.();
+      audioCtxRef.current?.close();
+      audioCtxRef.current = null;
+      cleanupRef.current = null;
+      setEnabled(false);
     } else {
-      audioRef.current.play().catch(() => {});
+      // 启动音效
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioCtxRef.current = ctx;
+        cleanupRef.current = createWaveSound(ctx);
+        setEnabled(true);
+      } catch {
+        // Web Audio API 不可用
+      }
     }
-    setEnabled(!enabled);
-  };
+  }, [enabled]);
 
   return (
     <button
