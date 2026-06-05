@@ -73,7 +73,18 @@ export default function HomePage() {
     setInput(action);
   };
 
-  if (mounted && !wawa.name) {
+  // 加载中
+  if (!mounted) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 animate-bounce" />
+        <p className="text-blue-500 text-sm">水滴娃正在赶来...</p>
+      </div>
+    );
+  }
+
+  // 未创建水滴娃 - 欢迎页
+  if (!wawa.name) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center text-center space-y-6">
         <motion.div
@@ -96,8 +107,6 @@ export default function HomePage() {
       </div>
     );
   }
-
-  if (!mounted) return null;
 
   const { percent } = getXpProgress(wawa.xp);
 

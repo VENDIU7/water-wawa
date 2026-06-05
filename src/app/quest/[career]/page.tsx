@@ -20,7 +20,14 @@ export default function CareerSkillTreePage({
   const careerData = careers.find(c => c.id === career);
   const nodes = careerSkills[career] || [];
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 animate-bounce" />
+        <p className="text-blue-500 text-sm">加载中...</p>
+      </div>
+    );
+  }
 
   if (!careerData) {
     return (

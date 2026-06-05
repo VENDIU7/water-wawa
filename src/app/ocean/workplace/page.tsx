@@ -11,7 +11,14 @@ export default function WorkplacePage() {
   const [selectedRoom, setSelectedRoom] = useState<WorkplaceRoom | null>(null);
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 animate-bounce" />
+        <p className="text-blue-500 text-sm">职场加载中...</p>
+      </div>
+    );
+  }
 
   const handleCompleteTask = (task: WorkplaceTask) => {
     setCompletedTasks(prev => {

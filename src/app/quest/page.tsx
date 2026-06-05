@@ -8,7 +8,16 @@ import { useWawa } from '@/hooks/useWawa';
 export default function QuestPage() {
   const { wawa, mounted } = useWawa();
 
-  if (mounted && !wawa.name) {
+  if (!mounted) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 animate-bounce" />
+        <p className="text-blue-500 text-sm">加载中...</p>
+      </div>
+    );
+  }
+
+  if (!wawa.name) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center text-center space-y-4">
         <span className="text-6xl">⚔️</span>
@@ -19,8 +28,6 @@ export default function QuestPage() {
       </div>
     );
   }
-
-  if (!mounted) return null;
 
   return (
     <div className="space-y-4">

@@ -13,7 +13,14 @@ export default function BountyPage() {
   const [submittedIds, setSubmittedIds] = useState<Set<string>>(new Set());
   const [showMvp, setShowMvp] = useState(false);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 animate-bounce" />
+        <p className="text-blue-500 text-sm">悬赏令加载中...</p>
+      </div>
+    );
+  }
 
   const handleSubmit = (bountyId: string) => {
     setSubmittedIds(prev => {

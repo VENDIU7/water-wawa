@@ -32,7 +32,14 @@ export default function TaskDetailPage({
   const completedTasks = getStorage<string[]>('completedTasks', []);
   const completedNodes = getStorage<string[]>('completedNodes', []);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 animate-bounce" />
+        <p className="text-blue-500 text-sm">加载中...</p>
+      </div>
+    );
+  }
 
   if (!nodeData) {
     return (
