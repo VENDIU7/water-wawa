@@ -21,22 +21,12 @@ export default function HomePage() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const [showLevelUp, setShowLevelUp] = useState(false);
-  const prevLevelRef = useRef(wawa.level);
 
   useEffect(() => {
     if (mounted && wawa.name) {
       tickHydration();
     }
-  }, [mounted]);
-
-  useEffect(() => {
-    if (prevLevelRef.current < wawa.level) {
-      setShowLevelUp(true);
-      setTimeout(() => setShowLevelUp(false), 3000);
-    }
-    prevLevelRef.current = wawa.level;
-  }, [wawa.level]);
+  }, [mounted, wawa.name, tickHydration]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -69,11 +59,7 @@ export default function HomePage() {
     }
   };
 
-  const handleQuickAction = (action: string) => {
-    setInput(action);
-  };
-
-  // 加载中
+  // === 未加载完毕 ===
   if (!mounted) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center space-y-4">
@@ -83,7 +69,7 @@ export default function HomePage() {
     );
   }
 
-  // 未创建水滴娃 - 欢迎页
+  // === 欢迎页 ===
   if (!wawa.name) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center text-center space-y-6">
@@ -108,41 +94,15 @@ export default function HomePage() {
     );
   }
 
+  // === 仪表盘 ===
   const { percent } = getXpProgress(wawa.xp);
 
   return (
     <div className="space-y-4">
-      {showLevelUp && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setShowLevelUp(false)}
-        >
-          <motion.div
-            className="text-center"
-            initial={{ scale: 0.5, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 200 }}
-          >
-            <div className="text-6xl mb-4">🎉</div>
-            <div className="text-3xl font-bold text-white mb-2">升级了！</div>
-            <div className="text-xl text-white/80">
-              {getLevelTitle(wawa.level)} Lv.{wawa.level}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-
       {/* 水滴娃状态卡片 */}
-      <motion.div
-        className="glass-card p-5 text-center space-y-3"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
+      <div className="glass-card p-5 text-center space-y-3">
         <div className="flex justify-center">
-          <WaterDrop avatar={wawa.avatar} hydration={wawa.hydration} size="lg" />
+          <WaterDrop avatar={wawa.avatar} hydration={wawa.hydration} size="lg" animate={false} />
         </div>
         <div>
           <h2 className="text-xl font-bold text-blue-800">{wawa.name}</h2>
@@ -152,17 +112,18 @@ export default function HomePage() {
           <p className="text-xs text-blue-400 mt-0.5">{getLevelTitle(wawa.level)}</p>
         </div>
 
+        {/* 经验条 */}
         <div className="px-4">
           <div className="h-2 bg-white/60 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full"
-              animate={{ width: `${percent}%` }}
-              transition={{ duration: 1 }}
+            <div
+              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-1000"
+              style={{ width: `${percent}%` }}
             />
           </div>
           <p className="text-xs text-blue-400 mt-1">经验 {wawa.xp} XP</p>
         </div>
 
+        {/* 滋润度 */}
         <div className="flex items-center justify-center gap-2">
           <span className="text-sm" style={{ color: getHydrationColor(wawa.hydration) }}>
             {getHydrationLabel(wawa.hydration)}
@@ -175,33 +136,23 @@ export default function HomePage() {
             🎯 {wawa.career}
           </span>
         )}
-      </motion.div>
+      </div>
 
       {/* 成长曲线 */}
-      <motion.div
-        className="glass-card p-4"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
+      <div className="glass-card p-4">
         <h3 className="text-sm font-semibold text-blue-700 mb-3">📈 成长曲线</h3>
         <GrowthChart xpHistory={[]} currentXp={wawa.xp} hydration={wawa.hydration} />
-      </motion.div>
+      </div>
 
       {/* 聊天区域 */}
-      <motion.div
-        className="glass-card p-4 space-y-3"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
+      <div className="glass-card p-4 space-y-3">
         <h3 className="text-sm font-semibold text-blue-700">💬 和水滴娃聊天</h3>
 
         <div className="flex gap-2 overflow-x-auto pb-1">
           {['我今天有点焦虑...', '推荐一个学习计划', '讲个笑话给我听', '职场小白该准备什么？'].map((qa, i) => (
             <button
               key={i}
-              onClick={() => handleQuickAction(qa)}
+              onClick={() => setInput(qa)}
               className="shrink-0 px-3 py-1.5 bg-blue-50 text-blue-600 text-xs rounded-full hover:bg-blue-100 transition-colors whitespace-nowrap"
             >
               {qa}
@@ -216,11 +167,9 @@ export default function HomePage() {
             </p>
           )}
           {chatMessages.map((msg, i) => (
-            <motion.div
+            <div
               key={i}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
             >
               <div
                 className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
@@ -231,13 +180,12 @@ export default function HomePage() {
               >
                 {msg.content}
               </div>
-            </motion.div>
+            </div>
           ))}
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-white/80 px-4 py-2 rounded-2xl text-sm text-gray-400">
-                水滴娃正在游过来...
-                <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>💧</motion.span>
+                水滴娃正在游过来...💧
               </div>
             </div>
           )}
@@ -261,7 +209,7 @@ export default function HomePage() {
             发送
           </button>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
