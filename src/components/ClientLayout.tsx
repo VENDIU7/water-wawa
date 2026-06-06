@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import BottomNav from './BottomNav';
 import SoundToggle from './SoundToggle';
 import WaveBackground from './WaveBackground';
+import ErrorBoundary from './ErrorBoundary';
 import { useState, useEffect } from 'react';
 import { getStorage } from '@/lib/storage';
 import { getStage, calculateLevel } from '@/lib/wawa';
@@ -33,7 +34,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
           >
-            {children}
+            <ErrorBoundary>{children}</ErrorBoundary>
           </motion.div>
         </AnimatePresence>
       </main>

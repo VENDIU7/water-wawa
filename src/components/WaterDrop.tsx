@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface WaterDropProps {
@@ -16,7 +17,18 @@ export default function WaterDrop({ avatar, hydration, size = 'md', animate = tr
     lg: 'w-32 h-32 text-6xl',
   };
 
-  // 根据滋润度决定水滴透明度
+  const circleRef = useRef<SVGCircleElement>(null);
+
+  // 用原生 DOM 更新 SVG strokeDasharray，避免 Framer Motion 字符串插值报错
+  useEffect(() => {
+    if (circleRef.current) {
+      const circumference = 2 * Math.PI * 46; // r=46
+      const dashLength = (hydration / 100) * circumference;
+      circleRef.current.style.strokeDasharray = `${dashLength} ${circumference}`;
+      circleRef.current.style.transition = 'stroke-dasharray 1.5s ease-out';
+    }
+  }, [hydration]);
+
   const opacity = 0.4 + (hydration / 100) * 0.6;
 
   return (
@@ -47,7 +59,7 @@ export default function WaterDrop({ avatar, hydration, size = 'md', animate = tr
           {avatar}
         </motion.span>
       </motion.div>
-      {/* 滋润度指示圈 */}
+      {/* 滋润度指示圈 - 使用原生 DOM 避免动画兼容问题 */}
       <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
         <circle
           cx="50"
@@ -57,7 +69,8 @@ export default function WaterDrop({ avatar, hydration, size = 'md', animate = tr
           stroke="rgba(255,255,255,0.2)"
           strokeWidth="3"
         />
-        <motion.circle
+        <circle
+          ref={circleRef}
           cx="50"
           cy="50"
           r="46"
@@ -65,10 +78,7 @@ export default function WaterDrop({ avatar, hydration, size = 'md', animate = tr
           stroke="rgba(100,200,255,0.6)"
           strokeWidth="3"
           strokeLinecap="round"
-          strokeDasharray={`${(hydration / 100) * 289} 289`}
-          initial={{ strokeDasharray: '0 289' }}
-          animate={{ strokeDasharray: `${(hydration / 100) * 289} 289` }}
-          transition={{ duration: 1.5, ease: 'easeOut' }}
+          strokeDasharray={`0 ${2 * Math.PI * 46}`}
         />
       </svg>
     </div>
